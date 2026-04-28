@@ -1,68 +1,59 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <title>URL Shortener</title>
+    <title>Events</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(to right, #667eea, #764ba2);
-            margin: 0;
-            padding: 0;
+            font-family: Arial;
+            background: linear-gradient(to right, #36d1dc, #5b86e5);
         }
 
         .container {
-            width: 400px;
-            margin: 100px auto;
+            width: 500px;
+            margin: auto;
+            margin-top: 50px;
             background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 10px;
             text-align: center;
         }
 
-        h1 {
-            margin-bottom: 20px;
-            color: #333;
-        }
-
-        input {
-            width: 90%;
-            padding: 12px;
-            border: 1px solid #ccc;
+        .event {
+            border: 1px solid #ddd;
+            margin: 10px;
+            padding: 10px;
             border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 14px;
         }
 
-        button {
-            padding: 12px 20px;
-            background: #667eea;
+        a {
+            text-decoration: none;
             color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: 0.3s;
+            background: #5b86e5;
+            padding: 8px 12px;
+            border-radius: 5px;
         }
 
-        button:hover {
-            background: #5a67d8;
-        }
-
-        .footer {
-            margin-top: 15px;
-            font-size: 12px;
-            color: gray;
+        a:hover {
+            background: #4a6fdc;
         }
     </style>
 </head>
-<body style="text-align:center; margin-top:50px;">
-<h1>🔗 URL Shortener</h1>
+<body>
 
-<form action="/shorten" method="POST">
-    <input type="text" name="url" placeholder="Enter Long URL" required style="width:300px; padding:10px;">
-    <br><br>
-    <button type="submit" style="padding:10px 20px;">Shorten</button>
-</form>
+<div class="container">
+    <h1>📅 Events</h1>
+
+    {% for event in events %}
+    <div class="event">
+        <h3>{{ event[1] }}</h3>
+        <p>{{ event[2] }}</p>
+        <p>{{ event[3] }}</p>
+        <p>👥 Registered: {{ event[4] }}</p>
+        <a href="/register/{{ event[0] }}">Register</a>
+    </div>
+    {% endfor %}
+
+</div>
+
 </body>
 </html>

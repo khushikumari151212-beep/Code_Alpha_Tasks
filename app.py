@@ -1,55 +1,81 @@
-from flask import Flask, request, redirect, render_template
+from flask import Flask, render_template, request, redirect
 import sqlite3
-import string, random
+import re
 
 app = Flask(__name__)
 
-# Generate random short code
-def generate_code():
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=6))
-
 # Initialize DB
 def init_db():
-    conn = sqlite3.connect('urls.db')
+    conn = sqlite3.connect('event.db')
     c = conn.cursor()
-    c.execute('CREATE TABLE IF NOT EXISTS urls (code TEXT, url TEXT)')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS events (
+                                                       id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                                       name TEXT,
+                                                       date TEXT,
+                                                       description TEXT
+                 )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS registrations (
+                                                              id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                                              name TEXT,
+                                                              email TEXT,
+                                                              event_id INTEGER
+                 )''')
+
     conn.commit()
     conn.close()
 
 init_db()
 
-# Home page (frontend)
+# Home (with registered count)
 @app.route('/')
 def home():
-    return render_template('index.html')
-
-# API to shorten URL
-@app.route('/shorten', methods=['POST'])
-def shorten():
-    long_url = request.form['url']
-    code = generate_code()
-
-    conn = sqlite3.connect('urls.db')
+    conn = sqlite3.connect('event.db')
     c = conn.cursor()
-    c.execute("INSERT INTO urls VALUES (?, ?)", (code, long_url))
+
+    c.execute("""
+              SELECT events.*, COUNT(registrations.id)
+              FROM events
+                       LEFT JOIN registrations
+                                 ON events.id = registrations.event_id
+              GROUP BY events.id
+              """)
+
+    events = c.fetchall()
+    conn.close()
+
+    return render_template('index.html', events=events)
+
+# Register page
+@app.route('/register/<int:event_id>')
+def register_page(event_id):
+    return render_template('register.html', event_id=event_id)
+
+# Submit form
+@app.route('/submit', methods=['POST'])
+def submit():
+    name = request.form['name']
+    email = request.form['email']
+    event_id = request.form['event_id']
+
+    # Email validation
+    if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+        return "<h3>❌ Invalid Email!</h3><a href='/'>Go Back</a>"
+
+    conn = sqlite3.connect('event.db')
+    c = conn.cursor()
+    c.execute("INSERT INTO registrations (name,email,event_id) VALUES (?,?,?)",
+              (name, email, event_id))
     conn.commit()
     conn.close()
 
-    short_url = f"http://127.0.0.1:5000/{code}"
-    return f"<h3>Short URL: <a href='{short_url}'>{short_url}</a></h3>"
+    return redirect('/success')
 
-# Redirect route
-@app.route('/<code>')
-def redirect_url(code):
-    conn = sqlite3.connect('urls.db')
-    c = conn.cursor()
-    c.execute("SELECT url FROM urls WHERE code=?", (code,))
-    result = c.fetchone()
-    conn.close()
-
-    if result:
-        return redirect(result[0])
-    return "<h3>URL not found!</h3>"
+# Success page
+@app.route('/success')
+def success():
+    return render_template('success.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
